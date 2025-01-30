@@ -1,19 +1,14 @@
 class Piece {
   constructor(id, up, position) {
     this.id = id;
-    this.up = up; // true = Up, false = Down
+    this.up = up; // true for up, false for down
     this.position = position;
   }
 }
 
 class Game {
-  board;
-  piecesMap;
-  boardSize;
-
   constructor(boardSize = 7) {
     this.boardSize = boardSize;
-
     this.board = Array(this.boardSize).fill(null);
     this.piecesMap = new Map();
 
@@ -32,19 +27,17 @@ class Game {
     });
   }
 
-  updateBoard = (oldPosition, newPosition, piece) => {
+  updateBoard(oldPosition, newPosition, piece) {
     if (oldPosition !== null && oldPosition >= 1 && oldPosition <= this.boardSize) {
       this.board[oldPosition - 1] = null;
     }
-
     if (newPosition >= 1 && newPosition <= this.boardSize) {
       this.board[newPosition - 1] = piece;
     }
   }
 
-  buildBoardOutput = () => {
-    const lines = [];
-    lines.push("Current Board State:");
+  buildBoardOutput() {
+    const lines = ["Current Board State:"];
     this.board.forEach((piece, index) => {
       const pieceStr = piece ? (piece.up ? '▲' : '▼') : '·';
       lines.push(`${index + 1} ${pieceStr} ${piece ? piece.id : ''}`);
@@ -52,60 +45,52 @@ class Game {
     return lines;
   }
 
-  displayBoard = () => {
+  displayBoard() {
     const lines = this.buildBoardOutput();
     lines.forEach(line => console.log(line));
   }
 
-  checkMovePosition = (pieceId) => {
+  getNextValidMove(pieceId) {
     const piece = this.piecesMap.get(pieceId);
     if (!piece) throw new Error(`Piece with ID ${pieceId} not found`);
-
     const direction = piece.up ? -1 : 1;
     const adjacentPosition = piece.position + direction;
-
     let possibleMove = null;
-    if (this.isValidPosition(adjacentPosition)) {
-      const adjacentPiece = this.getPieceByLocation(adjacentPosition);
+    if (this.isWithinBoardBounds(adjacentPosition)) {
+      const adjacentPiece = this.getPieceAtPosition(adjacentPosition);
       if (!adjacentPiece) {
-        possibleMove = (piece.position + direction);
-      } else {
-        if (adjacentPiece.up !== piece.up) {
-          const jumpPosition = piece.position + 2 * direction;
-          if (this.isValidPosition(jumpPosition) && !this.getPieceByLocation(jumpPosition)) {
-            possibleMove = jumpPosition;
-          }
+        possibleMove = piece.position + direction;
+      } else if (adjacentPiece.up !== piece.up) {
+        const jumpPosition = piece.position + 2 * direction;
+        if (this.isWithinBoardBounds(jumpPosition) && !this.getPieceAtPosition(jumpPosition)) {
+          possibleMove = jumpPosition;
         }
       }
     }
-
     return possibleMove;
   }
 
-  isStalemate() {
-    return ![...this.piecesMap.keys()].some(pieceId => this.checkMovePosition(pieceId) !== null);
+  isGameLocked() {
+    return ![...this.piecesMap.keys()].some(pieceId => this.getNextValidMove(pieceId) !== null);
   }
 
-  isValidPosition = (position) => {
+  isWithinBoardBounds(position) {
     return position > 0 && position <= this.boardSize;
   }
 
-  getPieceByLocation = (position) => {
+  getPieceAtPosition(position) {
     return this.board[position - 1] || null;
   }
 
-  movePiece = (pieceId, newPosition) => {
+  movePiece(pieceId, newPosition) {
     const piece = this.piecesMap.get(pieceId);
     if (!piece) throw new Error(`Piece with ID ${pieceId} not found`);
-
-    const possibleMoves = this.checkMovePosition(pieceId);
-    if (possibleMoves !== newPosition) {
+    const possibleMove = this.getNextValidMove(pieceId);
+    if (possibleMove !== newPosition) {
       throw new Error(`Invalid move for piece ${pieceId}`);
     }
-
     const oldPosition = piece.position;
     piece.position = newPosition;
-
     this.updateBoard(oldPosition, newPosition, piece);
   }
 }

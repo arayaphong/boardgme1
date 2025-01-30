@@ -23,13 +23,13 @@ describe('Game Initialization', () => {
   });
 
   test('should have correct initial piece positions', () => {
-    expect(game.getPieceByLocation(1).id).toBe(1);
-    expect(game.getPieceByLocation(5).up).toBe(true);
-    expect(game.getPieceByLocation(4)).toBeNull();
+    expect(game.getPieceAtPosition(1).id).toBe(1);
+    expect(game.getPieceAtPosition(5).up).toBe(true);
+    expect(game.getPieceAtPosition(4)).toBeNull();
   });
 
   test('should have display board correctly', () => {
-    const spy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const spy = jest.spyOn(console, 'log').mockImplementation(() => { });
     game.displayBoard();
     expect(spy).toHaveBeenCalledTimes(8);
     spy.mockRestore();
@@ -44,19 +44,19 @@ describe('Movement Validation', () => {
   });
 
   test('should find valid moves for down-facing piece', () => {
-    const moves = game.checkMovePosition(3);
+    const moves = game.getNextValidMove(3);
     expect(moves).toEqual(4);
   });
 
   test('should find valid jump moves', () => {
     game.movePiece(4, 4);
-    const moves = game.checkMovePosition(3);
+    const moves = game.getNextValidMove(3);
     expect(moves).toEqual(5); // Should jump over piece 1
   });
 
   test('should block invalid moves', () => {
-    expect(game.checkMovePosition(1)).toBeNull();
-    expect(game.checkMovePosition(6)).toBeNull();
+    expect(game.getNextValidMove(1)).toBeNull();
+    expect(game.getNextValidMove(6)).toBeNull();
   });
 });
 
@@ -69,8 +69,8 @@ describe('Piece Movement', () => {
 
   test('should move piece successfully', () => {
     game.movePiece(4, 4);
-    expect(game.getPieceByLocation(5)).toBeNull();
-    expect(game.getPieceByLocation(4).id).toBe(4);
+    expect(game.getPieceAtPosition(5)).toBeNull();
+    expect(game.getPieceAtPosition(4).id).toBe(4);
     expect(game.piecesMap.get(2).position).toBe(2);
   });
 
@@ -96,15 +96,15 @@ describe('Special Cases', () => {
   });
 
   test('should handle non-existent pieces', () => {
-    expect(() => game.checkMovePosition(99)).toThrow('not found');
+    expect(() => game.getNextValidMove(99)).toThrow('not found');
   });
 
   test('should correctly jump over opposing piece', () => {
     game.movePiece(3, 4);
-    expect(game.getPieceByLocation(4).id).toBe(3);
+    expect(game.getPieceAtPosition(4).id).toBe(3);
     game.movePiece(4, 3);
-    expect(game.getPieceByLocation(3).id).toBe(4);
-    expect(game.getPieceByLocation(5)).toBeNull();
+    expect(game.getPieceAtPosition(3).id).toBe(4);
+    expect(game.getPieceAtPosition(5)).toBeNull();
   });
 
   test('should prevent jumping same-direction pieces', () => {
@@ -117,7 +117,7 @@ describe('Game Over Conditions', () => {
 
   test('should return false when the game starts (moves available)', () => {
     game = new Game();
-    expect(game.isGameOver()).toBe(false);
+    expect(game.isGameLocked()).toBe(false);
   });
 
   test('should return true when all pieces are blocked', () => {
@@ -137,6 +137,6 @@ describe('Game Over Conditions', () => {
       game.board[piece.position - 1] = piece;
     });
 
-    expect(game.isGameOver()).toBe(true);
+    expect(game.isGameLocked()).toBe(true);
   });
 });
