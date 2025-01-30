@@ -17,15 +17,4 @@ game.piecesMap.forEach(piece => {
 });
 
 game.displayBoard();
-console.log("Game over:", game.isStalemate());
-
-// game.movePiece(3, 4);
-// game.displayBoard();
-
-// game.movePiece(4, 3);
-// game.displayBoard();
-
-// game.getPieceByLocation(3)
-
-// game.movePiece(3, 5);
-// game.displayBoard();
+console.log("Game over:", game.isGameLocked());
