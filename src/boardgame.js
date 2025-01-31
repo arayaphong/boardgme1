@@ -10,33 +10,30 @@ class Game {
     this.board = Array.from({ length: boardSize }, () => null);
     this.piecesMap = new Map();
 
-    // Default setup (if no custom pieces provided)
-    if (!customPieces) {
-      customPieces = [
+    this._initializePieces(
+      customPieces || [
         { id: 1, position: 1, up: false },
         { id: 2, position: 2, up: false },
         { id: 3, position: 3, up: false },
         { id: 4, position: 5, up: true },
         { id: 5, position: 6, up: true },
-        { id: 6, position: 7, up: true }
-      ];
-    }
-
-    this._initializePieces(customPieces);
+        { id: 6, position: 7, up: true },
+      ]
+    );
   }
 
   _initializePieces = (pieces) => {
-    const occupiedPositions = new Set(); // Track occupied positions
+    const occupiedPositions = new Set();
 
     pieces.forEach(({ id, position, up }) => {
       if (!this.isWithinBoardBounds(position)) {
-        throw new Error(`Invalid position ${position} for piece ${id}`);
+        throw new Error(`❌ Invalid position ${position} for piece ${id}`);
       }
       if (occupiedPositions.has(position)) {
-        throw new Error(`Position ${position} is already occupied!`);
+        throw new Error(`⚠️ Position ${position} is already occupied!`);
       }
 
-      occupiedPositions.add(position); // Mark position as occupied
+      occupiedPositions.add(position);
       const piece = new Piece(id, up, position);
       this.board[position - 1] = piece;
       this.piecesMap.set(id, piece);
@@ -44,33 +41,35 @@ class Game {
   };
 
   updateBoard = (oldPosition, newPosition, piece) => {
-    if (this.isWithinBoardBounds(oldPosition)) this.board[oldPosition - 1] = null;
-    if (this.isWithinBoardBounds(newPosition)) this.board[newPosition - 1] = piece;
+    this.board[oldPosition - 1] = null;
+    this.board[newPosition - 1] = piece;
   };
 
-  buildBoardOutput = () =>
-    [`Current Board State:`].concat(
-      this.board.map((piece, index) =>
-        `${index + 1} ${piece ? (piece.up ? '▲' : '▼') : '·'} ${piece?.id ?? ''}`
-      )
-    );
+  buildBoardOutput = () => [
+    "🎲 Current Board State:",
+    ...this.board.map(
+      (piece, index) => `${index + 1} ${piece ? (piece.up ? "▲" : "▼") : "·"} ${piece?.id ?? ""}`
+    ),
+  ];
 
-  displayBoard = () => this.buildBoardOutput().forEach(line => console.log(line));
+  displayBoard = () => console.log(this.buildBoardOutput().join("\n"));
 
   getNextValidMove = (pieceId) => {
     const piece = this.piecesMap.get(pieceId);
-    if (!piece) throw new Error(`Piece with ID ${pieceId} not found`);
+    if (!piece) throw new Error(`❌ Piece with ID ${pieceId} not found`);
 
     const direction = piece.up ? -1 : 1;
     const adjacentPosition = piece.position + direction;
 
-    if (this.isWithinBoardBounds(adjacentPosition)) {
-      const adjacentPiece = this.getPieceAtPosition(adjacentPosition);
-      if (!adjacentPiece) return adjacentPosition;
-      if (adjacentPiece.up !== piece.up) {
-        const jumpPosition = piece.position + 2 * direction;
-        if (this.isWithinBoardBounds(jumpPosition) && !this.getPieceAtPosition(jumpPosition))
-          return jumpPosition;
+    if (!this.isWithinBoardBounds(adjacentPosition)) return null;
+
+    const adjacentPiece = this.getPieceAtPosition(adjacentPosition);
+    if (!adjacentPiece) return adjacentPosition;
+
+    if (adjacentPiece.up !== piece.up) {
+      const jumpPosition = piece.position + 2 * direction;
+      if (this.isWithinBoardBounds(jumpPosition) && !this.getPieceAtPosition(jumpPosition)) {
+        return jumpPosition;
       }
     }
     return null;
@@ -84,10 +83,12 @@ class Game {
 
   movePiece = (pieceId, newPosition) => {
     const piece = this.piecesMap.get(pieceId);
-    if (!piece) throw new Error(`Piece with ID ${pieceId} not found`);
+    if (!piece) throw new Error(`❌ Piece with ID ${pieceId} not found`);
 
     const possibleMove = this.getNextValidMove(pieceId);
-    if (possibleMove !== newPosition) throw new Error(`Invalid move for piece ${pieceId}`);
+    if (possibleMove !== newPosition) {
+      throw new Error(`⚠️ Invalid move for piece ${pieceId}. Allowed move: ${possibleMove}`);
+    }
 
     this.updateBoard(piece.position, newPosition, piece);
     piece.position = newPosition;
