@@ -61,18 +61,31 @@ class Game {
     const direction = piece.up ? -1 : 1;
     const adjacentPosition = piece.position + direction;
 
-    if (!this.isWithinBoardBounds(adjacentPosition)) return null;
+    if (this.isWithinBoardBounds(adjacentPosition) && !this.getPieceAtPosition(adjacentPosition)) {
+      return adjacentPosition;
+    }
 
     const adjacentPiece = this.getPieceAtPosition(adjacentPosition);
-    if (!adjacentPiece) return adjacentPosition;
+    const jumpPosition = piece.position + 2 * direction;
 
-    if (adjacentPiece.up !== piece.up) {
-      const jumpPosition = piece.position + 2 * direction;
-      if (this.isWithinBoardBounds(jumpPosition) && !this.getPieceAtPosition(jumpPosition)) {
-        return jumpPosition;
-      }
+    if (
+      adjacentPiece && adjacentPiece.up !== piece.up &&
+      this.isWithinBoardBounds(jumpPosition) &&
+      !this.getPieceAtPosition(jumpPosition)
+    ) {
+      return jumpPosition;
     }
+
     return null;
+  };
+
+  getAllValidMoves = () => {
+    return [...this.piecesMap.values()]
+      .map(piece => ({
+        pieceId: piece.id,
+        validMoves: this.getNextValidMove(piece.id) ? [this.getNextValidMove(piece.id)] : []
+      }))
+      .filter(({ validMoves }) => validMoves.length > 0);
   };
 
   isGameLocked = () => ![...this.piecesMap.keys()].some((id) => this.getNextValidMove(id) !== null);

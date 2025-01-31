@@ -199,3 +199,42 @@ test("should allow valid custom piece placements", () => {
   expect(game.getPieceAtPosition(3).id).toBe(2);
   expect(game.getPieceAtPosition(5).id).toBe(3);
 });
+
+describe("Finding All Movable Pieces", () => {
+  let game;
+
+  beforeEach(() => {
+    game = new Game();
+  });
+
+  test("should find all pieces that have at least one valid move", () => {
+    const validMoves = game.getAllValidMoves();
+
+    expect(validMoves).toEqual([
+      { pieceId: 3, validMoves: [4] },
+      { pieceId: 4, validMoves: [4] }
+    ]);
+  });
+
+  test("should return an empty array when no pieces can move", () => {
+    game = new Game(7, [
+      { id: 1, position: 5, up: false },
+      { id: 2, position: 6, up: false },
+      { id: 3, position: 7, up: false },
+      { id: 4, position: 1, up: true },
+      { id: 5, position: 2, up: true },
+      { id: 6, position: 3, up: true },
+    ]);
+
+    expect(game.getAllValidMoves()).toEqual([]);
+  });
+
+  test("should correctly list pieces and their valid moves after a move", () => {
+    game.movePiece(4, 4); // Move piece 4 to position 4
+
+    expect(game.getAllValidMoves()).toEqual([
+      { pieceId: 3, validMoves: [5] }, // Piece 3 can jump over 4 to position 5
+      { pieceId: 5, validMoves: [5] }  // Piece 5 moves upward to position 5
+    ]);
+  });
+});
