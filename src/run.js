@@ -8,20 +8,13 @@ let lockedGameCount = 0; // Track how many times the game locks
  * @returns {boolean} - Returns true if the board is in the success state.
  */
 const isSuccessState = (game) => {
-    const successPositions = {
-        1: { position: 5, up: false },
-        2: { position: 6, up: false },
-        3: { position: 7, up: false },
-        4: { position: 1, up: true },
-        5: { position: 2, up: true },
-        6: { position: 3, up: true },
-    };
-
-    return Object.entries(successPositions).every(([id, { position, up }]) => {
-        const piece = game.piecesMap.get(Number(id));
-        return piece
-            ? piece.position === position && piece.up === up
-            : up === null;
+    // Check if pieces 1-3 are face up and pieces 5-7 are face down
+    return [1, 2, 3].every(id => {
+        const piece = game.getPieceAtPosition(id);
+        return piece?.up === true;
+    }) && [5, 6, 7].every(id => {
+        const piece = game.getPieceAtPosition(id);
+        return piece?.up === false;
     });
 };
 
