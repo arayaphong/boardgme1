@@ -238,3 +238,36 @@ describe("Finding All Movable Pieces", () => {
     ]);
   });
 });
+
+describe("Success State Validation", () => {
+  let game;
+
+  test("should correctly identify a success state", () => {
+    game = new Game(7, [
+      { id: 1, position: 1, up: true },
+      { id: 2, position: 2, up: true },
+      { id: 3, position: 3, up: true },
+      { id: 4, position: 5, up: false },
+      { id: 5, position: 6, up: false },
+      { id: 6, position: 7, up: false },
+    ]);
+    expect(game.isSuccessState()).toBe(true);
+  });
+
+  test("should correctly identify a non-success state", () => {
+    game = new Game(); // Default initial state
+    expect(game.isSuccessState()).toBe(false);
+  });
+
+  test("should handle edge case with all pieces up", () => {
+    game = new Game(7, [
+      { id: 1, position: 1, up: true },
+      { id: 2, position: 2, up: true },
+      { id: 3, position: 3, up: true },
+      { id: 4, position: 4, up: true },
+      { id: 5, position: 5, up: true },
+      { id: 6, position: 6, up: true },
+    ]);
+    expect(game.isSuccessState()).toBe(false);
+  });
+});

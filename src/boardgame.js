@@ -106,6 +106,20 @@ class Game {
     this.updateBoard(piece.position, newPosition, piece);
     piece.position = newPosition;
   };
+
+  isSuccessState() {
+    const pieces = [...this.piecesMap.values()].sort((a, b) => a.position - b.position);
+    const upFacedCount = pieces.filter(piece => piece.up).length;
+
+    // Require at least one down-faced piece to validate full alignment
+    const hasDownFaced = pieces.some(piece => !piece.up);
+
+    return pieces.every((piece, index) => {
+      return index < upFacedCount
+        ? piece.up && piece.position === index + 1
+        : !piece.up && piece.position === this.boardSize - (pieces.length - 1 - index);
+    }) && (hasDownFaced || upFacedCount === 0);
+  }
 }
 
 export { Game, Piece };

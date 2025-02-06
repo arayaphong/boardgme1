@@ -1,35 +1,13 @@
 import { Game } from "./boardgame.js";
 
-let lockedGameCount = 0; // Track how many times the game locks
-const memo = new Map(); // Memoization to store board states
+let lockedGameCount = 0;
+const memo = new Map();
 
-/**
- * Checks if the final board matches the "Success" win condition.
- * @param {Game} game - The current game state.
- * @returns {boolean} - Returns true if the board is in the success state.
- */
-const isSuccessState = (game) => {
-    // Check if pieces 1-3 are face up and pieces 5-7 are face down
-    return [1, 2, 3].every(id => {
-        const piece = game.getPieceAtPosition(id);
-        return piece?.up === true;
-    }) && [5, 6, 7].every(id => {
-        const piece = game.getPieceAtPosition(id);
-        return piece?.up === false;
-    });
-};
-
-
-/**
- * Traverses all possible moves recursively until the game is locked.
- * @param {Game} game - The current game state.
- * @param {Array} history - Log of moves.
- */
 const traverseMoves = (game, history = []) => {
     if (game.isGameLocked()) {
         lockedGameCount++; // Increase locked game count
 
-        const resultMessage = isSuccessState(game)
+        const resultMessage = game.isSuccessState()
             ? `✅ Success #${lockedGameCount}`
             : `💀 Game Over #${lockedGameCount}`;
 
@@ -64,7 +42,8 @@ const traverseMoves = (game, history = []) => {
 };
 
 const findSolution = (game, history = []) => {
-    const boardStateKey = game.buildBoardOutput().join("|"); // Unique key for each board state
+    const boardStateKey = game.buildBoardOutput().join("|");
+
     if (memo.has(boardStateKey)) {
         lockedGameCount += memo.get(boardStateKey).isSuccess ? 1 : 0;
         return;
@@ -72,8 +51,7 @@ const findSolution = (game, history = []) => {
 
     if (game.isGameLocked()) {
         lockedGameCount++;
-
-        const isSuccess = isSuccessState(game);
+        const isSuccess = game.isSuccessState();
         const resultMessage = isSuccess
             ? `✅ Success #${lockedGameCount}`
             : `💀 Game Over #${lockedGameCount}`;
@@ -94,24 +72,23 @@ const findSolution = (game, history = []) => {
         validMoves.forEach((move) => {
             const clonedGame = new Game(
                 game.boardSize,
-                [...game.piecesMap.values()].map((p) => ({
+                [...game.piecesMap.values()].map(p => ({
                     id: p.id,
                     position: p.position,
-                    up: p.up,
+                    up: p.up
                 }))
             );
-
             clonedGame.movePiece(pieceId, move);
-
-            const moveLog = `Piece ${pieceId} → ${move}`;
-            const newHistory = [...history, moveLog];
-
+            const newHistory = [...history, `Piece ${pieceId} → ${move}`];
             findSolution(clonedGame, newHistory);
-            if (memo.has(clonedGame.buildBoardOutput().join("|")) && memo.get(clonedGame.buildBoardOutput().join("|")).isSuccess) {
+
+            if (memo.has(clonedGame.buildBoardOutput().join("|")) &&
+                memo.get(clonedGame.buildBoardOutput().join("|")).isSuccess) {
                 hasSuccess = true;
             }
         });
     });
+
     memo.set(boardStateKey, { isSuccess: hasSuccess });
 };
 
