@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arrow Challenge (ES6+)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(7, 60px);
+      gap: 10px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .position {
+      width: 60px;
+      height: 60px;
+      border: 2px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+    }
+    .piece {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .up { background-color: #4CAF50; }
+    .down { background-color: #f44336; }
+    .controls {
+      margin: 20px 0;
+      display: flex;
+      gap: 10px;
+    }
+    .message {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .success { background-color: #d4edda; color: #155724; }
+    .error { background-color: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <h1>Arrow Challenge</h1>
+  <div id="board"></div>
+  <div class="controls">
+    <button id="resetBtn">Reset</button>
+  </div>
+  <div id="message" class="message"></div>
+
+  <script type="module">
+    class Piece {
+      constructor(id, up, position) {
+        this.id = id;
+        this.up = up;
+        this.position = position;
+      }
+    }
+
+    class Game {
+      constructor(boardSize = 7, customPieces = null) {
+        this.boardSize = boardSize;
+        this.board = Array(boardSize).fill(null);
+        this.piecesMap = new Map();
+        this.initPieces(customPieces || [
+          { id: 1, position: 1, up: false },
+          { id: 2, position: 2, up: false },
+          { id: 3, position: 3, up: false },
+          { id: 4, position: 5, up: true },
+          { id: 5, position: 6, up: true },
+          { id: 6, position: 7, up: true },
+        ]);
+      }
+
+      initPieces(pieces) {
+        const occupied = new Set();
+        pieces.forEach(({ id, position, up }) => {
+          if (!this.withinBounds(position)) throw new Error(`Invalid position ${position} for piece ${id}`);
+          if (occupied.has(position)) throw new Error(`Position ${position} is occupied`);
+          occupied.add(position);
+
+          const piece = new Piece(id, up, position);
+          this.board[position - 1] = piece;
+          this.piecesMap.set(id, piece);
+        });
+      }
+
+      withinBounds(pos) {
+        return pos > 0 && pos <= this.boardSize;
+      }
+
+      getPieceAt(pos) {
+        return this.board[pos - 1] || null;
+      }
+
+      updateBoard(oldPos, newPos, piece) {
+        this.board[oldPos - 1] = null;
+        this.board[newPos - 1] = piece;
+      }
+
+      getNextValidMove(pieceId) {
+        const piece = this.piecesMap.get(pieceId);
+        if (!piece) throw new Error(`Piece ${pieceId} not found`);
+
+        const dir = piece.up ? -1 : 1;
+        const adj = piece.position + dir;
+
+        if (this.withinBounds(adj) && !this.getPieceAt(adj)) {
+          return adj;
+        }
+
+        const adjPiece = this.getPieceAt(adj);
+        const jump = piece.position + 2 * dir;
+        if (
+          adjPiece && adjPiece.up !== piece.up &&
+          this.withinBounds(jump) && !this.getPieceAt(jump)
+        ) {
+          return jump;
+        }
+
+        return null;
+      }
+
+      move(pieceId, toPos) {
+        const valid = this.getNextValidMove(pieceId);
+        if (valid !== toPos) throw new Error(`Invalid move for piece ${pieceId}`);
+
+        const piece = this.piecesMap.get(pieceId);
+        this.updateBoard(piece.position, toPos, piece);
+        piece.position = toPos;
+      }
+
+      isSuccess() {
+        const pieces = [...this.piecesMap.values()].sort((a, b) => a.position - b.position);
+        const upCount = pieces.filter(p => p.up).length;
+        const hasDown = pieces.some(p => !p.up);
+
+        return pieces.every((p, i) => {
+          return i < upCount
+            ? p.up && p.position === i + 1
+            : !p.up && p.position === this.boardSize - (pieces.length - 1 - i);
+        }) && (hasDown || upCount === 0);
+      }
+    }
+
+    let game = new Game();
+    const boardEl = document.getElementById('board');
+    const msgEl = document.getElementById('message');
+    const resetBtn = document.getElementById('resetBtn');
+
+    const render = () => {
+      boardEl.innerHTML = '';
+      game.board.forEach((piece, idx) => {
+        const cell = document.createElement('div');
+        cell.className = 'position';
+
+        if (piece) {
+          const el = document.createElement('div');
+          el.classList.add('piece', piece.up ? 'up' : 'down');
+          el.textContent = piece.up ? '←' : '→';
+          el.dataset.pieceId = piece.id;
+          cell.appendChild(el);
+        }
+
+        boardEl.appendChild(cell);
+      });
+    };
+
+    const showMsg = (text, type = 'success') => {
+      msgEl.textContent = text;
+      msgEl.className = `message ${type}`;
+    };
+
+    boardEl.addEventListener('click', ({ target }) => {
+      const clicked = target.closest('.piece');
+      if (!clicked) return;
+
+      const id = +clicked.dataset.pieceId;
+      const next = game.getNextValidMove(id);
+      if (!next) return showMsg('⚠️ No valid moves', 'error');
+
+      try {
+        game.move(id, next);
+        render();
+        if (game.isSuccess()) showMsg('🎉 Puzzle solved!', 'success');
+      } catch ({ message }) {
+        showMsg(message, 'error');
+      }
+    });
+
+    resetBtn.addEventListener('click', () => {
+      game = new Game();
+      render();
+      showMsg('Game reset', 'success');
+    });
+
+    // initialize board
+    render();
+  </script>
+</body>
+</html>
