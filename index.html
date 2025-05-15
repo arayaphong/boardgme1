@@ -64,99 +64,7 @@
   <div id="message" class="message"></div>
 
   <script type="module">
-    class Piece {
-      constructor(id, up, position) {
-        this.id = id;
-        this.up = up;
-        this.position = position;
-      }
-    }
-
-    class Game {
-      constructor(boardSize = 7, customPieces = null) {
-        this.boardSize = boardSize;
-        this.board = Array(boardSize).fill(null);
-        this.piecesMap = new Map();
-        this.initPieces(customPieces || [
-          { id: 1, position: 1, up: false },
-          { id: 2, position: 2, up: false },
-          { id: 3, position: 3, up: false },
-          { id: 4, position: 5, up: true },
-          { id: 5, position: 6, up: true },
-          { id: 6, position: 7, up: true },
-        ]);
-      }
-
-      initPieces(pieces) {
-        const occupied = new Set();
-        pieces.forEach(({ id, position, up }) => {
-          if (!this.withinBounds(position)) throw new Error(`Invalid position ${position} for piece ${id}`);
-          if (occupied.has(position)) throw new Error(`Position ${position} is occupied`);
-          occupied.add(position);
-
-          const piece = new Piece(id, up, position);
-          this.board[position - 1] = piece;
-          this.piecesMap.set(id, piece);
-        });
-      }
-
-      withinBounds(pos) {
-        return pos > 0 && pos <= this.boardSize;
-      }
-
-      getPieceAt(pos) {
-        return this.board[pos - 1] || null;
-      }
-
-      updateBoard(oldPos, newPos, piece) {
-        this.board[oldPos - 1] = null;
-        this.board[newPos - 1] = piece;
-      }
-
-      getNextValidMove(pieceId) {
-        const piece = this.piecesMap.get(pieceId);
-        if (!piece) throw new Error(`Piece ${pieceId} not found`);
-
-        const dir = piece.up ? -1 : 1;
-        const adj = piece.position + dir;
-
-        if (this.withinBounds(adj) && !this.getPieceAt(adj)) {
-          return adj;
-        }
-
-        const adjPiece = this.getPieceAt(adj);
-        const jump = piece.position + 2 * dir;
-        if (
-          adjPiece && adjPiece.up !== piece.up &&
-          this.withinBounds(jump) && !this.getPieceAt(jump)
-        ) {
-          return jump;
-        }
-
-        return null;
-      }
-
-      move(pieceId, toPos) {
-        const valid = this.getNextValidMove(pieceId);
-        if (valid !== toPos) throw new Error(`Invalid move for piece ${pieceId}`);
-
-        const piece = this.piecesMap.get(pieceId);
-        this.updateBoard(piece.position, toPos, piece);
-        piece.position = toPos;
-      }
-
-      isSuccess() {
-        const pieces = [...this.piecesMap.values()].sort((a, b) => a.position - b.position);
-        const upCount = pieces.filter(p => p.up).length;
-        const hasDown = pieces.some(p => !p.up);
-
-        return pieces.every((p, i) => {
-          return i < upCount
-            ? p.up && p.position === i + 1
-            : !p.up && p.position === this.boardSize - (pieces.length - 1 - i);
-        }) && (hasDown || upCount === 0);
-      }
-    }
+    import { Game } from './src/boardgame.js';
 
     let game = new Game();
     const boardEl = document.getElementById('board');
@@ -195,9 +103,9 @@
       if (!next) return showMsg('⚠️ No valid moves', 'error');
 
       try {
-        game.move(id, next);
+        game.movePiece(id, next);
         render();
-        if (game.isSuccess()) showMsg('🎉 Puzzle solved!', 'success');
+        if (game.isSuccessState()) showMsg('🎉 Puzzle solved!', 'success');
       } catch ({ message }) {
         showMsg(message, 'error');
       }
