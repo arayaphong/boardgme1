@@ -1,105 +1,49 @@
-import { Game } from "./boardgame.js";
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-let lockedGameCount = 0;
-const memo = new Map();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PORT = process.env.PORT || 3000;
 
-const traverseMoves = (game, history = []) => {
-    if (game.isGameLocked()) {
-        lockedGameCount++; // Increase locked game count
+const server = http.createServer((req, res) => {
+    // Parse URL to get the path
+    const filePath = path.join(__dirname, '..', req.url === '/' ? 'index.html' : req.url);
 
-        const resultMessage = game.isSuccessState()
-            ? `✅ Success #${lockedGameCount}`
-            : `💀 Game Over #${lockedGameCount}`;
+    // Get the file extension
+    const extname = String(path.extname(filePath)).toLowerCase();
 
-        console.log(resultMessage);
-        console.log("📜 Move Steps:\n" + history.map((move, i) => `${i + 1}. ${move}`).join("\n"));
-        game.displayBoard();
-        console.log("\n");
-        return;
-    }
+    // MIME types for common file extensions
+    const mimeTypes = {
+        '.html': 'text/html',
+        '.js': 'text/javascript',
+        '.css': 'text/css',
+    };
 
-    const validMoves = game.getAllValidMoves();
+    const contentType = mimeTypes[extname] || 'application/octet-stream';
 
-    validMoves.forEach(({ pieceId, validMoves }) => {
-        validMoves.forEach((move) => {
-            const clonedGame = new Game(
-                game.boardSize,
-                [...game.piecesMap.values()].map((p) => ({
-                    id: p.id,
-                    position: p.position,
-                    up: p.up,
-                }))
-            );
-
-            clonedGame.movePiece(pieceId, move);
-
-            const moveLog = `Piece ${pieceId} → ${move}`;
-            const newHistory = [...history, moveLog];
-
-            traverseMoves(clonedGame, newHistory);
-        });
-    });
-};
-
-const findSolution = (game, history = []) => {
-    const boardStateKey = game.buildBoardOutput().join("|");
-
-    if (memo.has(boardStateKey)) {
-        lockedGameCount += memo.get(boardStateKey).isSuccess ? 1 : 0;
-        return;
-    }
-
-    if (game.isGameLocked()) {
-        lockedGameCount++;
-        const isSuccess = game.isSuccessState();
-        const resultMessage = isSuccess
-            ? `✅ Success #${lockedGameCount}`
-            : `💀 Game Over #${lockedGameCount}`;
-
-        console.log(resultMessage);
-        console.log("📜 Move Steps:\n" + history.map((move, i) => `${i + 1}. ${move}`).join("\n"));
-        game.displayBoard();
-        console.log("\n");
-
-        memo.set(boardStateKey, { isSuccess });
-        return;
-    }
-
-    const validMoves = game.getAllValidMoves();
-    let hasSuccess = false;
-
-    validMoves.forEach(({ pieceId, validMoves }) => {
-        validMoves.forEach((move) => {
-            const clonedGame = new Game(
-                game.boardSize,
-                [...game.piecesMap.values()].map(p => ({
-                    id: p.id,
-                    position: p.position,
-                    up: p.up
-                }))
-            );
-            clonedGame.movePiece(pieceId, move);
-            const newHistory = [...history, `Piece ${pieceId} → ${move}`];
-            findSolution(clonedGame, newHistory);
-
-            if (memo.has(clonedGame.buildBoardOutput().join("|")) &&
-                memo.get(clonedGame.buildBoardOutput().join("|")).isSuccess) {
-                hasSuccess = true;
+    // Read the file
+    fs.readFile(filePath, (err, content) => {
+        if (err) {
+            if (err.code === 'ENOENT') {
+                // Page not found
+                res.writeHead(404);
+                res.end('Not found');
+            } else {
+                // Server error
+                res.writeHead(500);
+                res.end(`Server Error: ${err.code}`);
             }
-        });
+        } else {
+            // Success
+            res.writeHead(200, { 'Content-Type': contentType });
+            res.end(content);
+        }
     });
+});
 
-    memo.set(boardStateKey, { isSuccess: hasSuccess });
-};
-
-
-// Initialize game and start traversal
-const game = new Game();
-console.log("🎲 Initial Board:");
-game.displayBoard();
-console.log("\n🚀 Starting Traversal...\n");
-
-findSolution(game);
-// traverseMoves(game);
-
-console.log(`🏁 Total Moving Senario: ${lockedGameCount}`);
+server.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`Serving ./index.html as the default page`);
+});

@@ -5,6 +5,7 @@
   "description": "",
   "main": "boardgame.js",
   "scripts": {
+    "start": "NODE_OPTIONS=--experimental-vm-modules node src/run.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage"
   },

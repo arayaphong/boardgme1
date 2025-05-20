@@ -1,23 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Arrow Challenge (ES6+)</title>
+  <title>Frog Challenge - Horizontal Board</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
     }
-    #board {
-      display: grid;
-      grid-template-columns: repeat(7, 60px);
-      gap: 10px;
+
+    .piece {
+      width: 40px;
+      height: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
-      margin: 20px 0;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s ease-out, filter 0.2s ease-out;
+      z-index: 10;
     }
+
+    .piece:hover:not(.is-animating-frog) {
+      transform: scale(1.15);
+      filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.3));
+    }
+
+    .is-animating-frog {
+      /* Class for the frog piece during its jump animation */
+      position: absolute;
+      z-index: 90;
+      /* Below dashing arrow, but above static board */
+    }
+
+    .is-animating-frog .indicator-symbol {
+      /* Hide static indicator on jumping frog */
+      visibility: hidden;
+    }
+
+
+    .piece-visual {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .frog-emoji {
+      font-size: 28px;
+      line-height: 1;
+      transition: filter 0.3s ease-in-out;
+    }
+
+    .frog-emoji.down-team {
+      filter: hue-rotate(180deg) saturate(1.5);
+    }
+
+    .indicator-symbol {
+      font-size: 20px;
+      font-weight: bold;
+      line-height: 1;
+      margin-top: -4px;
+    }
+
+    .indicator-symbol.up {
+      color: #4CAF50;
+    }
+
+    .indicator-symbol.down {
+      color: #f44336;
+    }
+
+    .animating-arrow {
+      position: absolute;
+      z-index: 100;
+      width: auto;
+    }
+
+
     .position {
       width: 60px;
       height: 60px;
@@ -27,98 +91,477 @@
       justify-content: center;
       position: relative;
       cursor: pointer;
+      border-radius: 8px;
+      transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.3s ease-in-out;
     }
-    .piece {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
+
+    .position.hide-original-piece .piece {
+      visibility: hidden;
     }
-    .up { background-color: #4CAF50; }
-    .down { background-color: #f44336; }
-    .controls {
-      margin: 20px 0;
-      display: flex;
+
+
+    .position:not(:has(.piece)):hover {
+      background-color: #e9e9e9;
+    }
+
+    .preview-target-up {
+      background-color: #d4edda !important;
+      border-color: #a3d9a5 !important;
+      box-shadow: 0 0 8px rgba(76, 175, 80, 0.5) !important;
+    }
+
+    .preview-target-down {
+      background-color: #f8d7da !important;
+      border-color: #f1aeb5 !important;
+      box-shadow: 0 0 8px rgba(244, 67, 54, 0.5) !important;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(7, 60px);
       gap: 10px;
-    }
-    .message {
-      margin: 10px 0;
+      justify-content: center;
+      margin: 20px auto;
       padding: 10px;
-      border-radius: 5px;
+      background-color: #f0f0f0;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: fit-content;
+      position: relative;
     }
-    .success { background-color: #d4edda; color: #155724; }
-    .error { background-color: #f8d7da; color: #721c24; }
+
+    .controls {
+      /* Adjusted to simply center the button */
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .controls button {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s ease-out, box-shadow 0.2s ease-out;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .controls button:hover {
+      background-color: #0056b3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .controls button:active {
+      transform: translateY(0px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Removed #coordinates-display CSS */
+
+    .message {
+      margin: 20px 0;
+      padding: 12px 15px;
+      border-radius: 6px;
+      text-align: center;
+      animation: fadeInMessage 0.5s ease-out forwards;
+      opacity: 0;
+    }
+
+    @keyframes fadeInMessage {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    /* Frog Jump Animations */
+    .animate-jump-right-one {
+      animation: jump-right-one 0.5s ease-out forwards;
+    }
+
+    .animate-jump-left-one {
+      animation: jump-left-one 0.5s ease-out forwards;
+    }
+
+    .animate-jump-right-two {
+      animation: jump-right-two 0.6s ease-out forwards;
+    }
+
+    .animate-jump-left-two {
+      animation: jump-left-two 0.6s ease-out forwards;
+    }
+
+    @keyframes jump-right-one {
+      0% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      50% {
+        transform: translate(35px, -40px) scale(1.2);
+      }
+
+      100% {
+        transform: translate(70px, 0) scale(1);
+      }
+    }
+
+    @keyframes jump-left-one {
+      0% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      50% {
+        transform: translate(-35px, -40px) scale(1.2);
+      }
+
+      100% {
+        transform: translate(-70px, 0) scale(1);
+      }
+    }
+
+    @keyframes jump-right-two {
+      0% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      50% {
+        transform: translate(70px, -55px) scale(1.25);
+      }
+
+      100% {
+        transform: translate(140px, 0) scale(1);
+      }
+    }
+
+    @keyframes jump-left-two {
+      0% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      50% {
+        transform: translate(-70px, -55px) scale(1.25);
+      }
+
+      100% {
+        transform: translate(-140px, 0) scale(1);
+      }
+    }
+
+    /* Arrow Dash Animations */
+    .animate-dash-right-one {
+      animation: dash-right-one 0.5s ease-out forwards;
+    }
+
+    .animate-dash-left-one {
+      animation: dash-left-one 0.5s ease-out forwards;
+    }
+
+    .animate-dash-right-two {
+      animation: dash-right-two 0.6s ease-out forwards;
+    }
+
+    .animate-dash-left-two {
+      animation: dash-left-two 0.6s ease-out forwards;
+    }
+
+    @keyframes dash-right-one {
+      0% {
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateX(70px);
+        opacity: 1;
+      }
+    }
+
+    @keyframes dash-left-one {
+      0% {
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateX(-70px);
+        opacity: 1;
+      }
+    }
+
+    @keyframes dash-right-two {
+      0% {
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateX(140px);
+        opacity: 1;
+      }
+    }
+
+    @keyframes dash-left-two {
+      0% {
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateX(-140px);
+        opacity: 1;
+      }
+    }
   </style>
 </head>
-<body>
-  <h1>Arrow Challenge</h1>
-  <div id="board"></div>
-  <div class="controls">
-    <button id="resetBtn">Reset</button>
+
+<body class="bg-gray-100 flex flex-col items-center min-h-screen py-10">
+  <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl">
+    <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Frog Challenge</h1>
+    <div id="board"></div>
+    <div class="controls">
+      <button id="resetBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow">
+        Reset Game
+      </button>
+    </div>
+    <div id="message" class="message"></div>
   </div>
-  <div id="message" class="message"></div>
 
   <script type="module">
-    import { Game } from './src/boardgame.js';
+    class Piece {
+      constructor(id, up, position) {
+        Object.assign(this, { id, up, position });
+      }
+    }
 
+    import { Game } from './src/boardgame.js';
     let game = new Game();
     const boardEl = document.getElementById('board');
     const msgEl = document.getElementById('message');
     const resetBtn = document.getElementById('resetBtn');
+    // Removed coordinatesDisplayEl variable
+    let currentlyPreviewedTargetCell = null;
+    let isAnimating = false;
+
+    const clearPreviewHighlights = () => {
+      if (currentlyPreviewedTargetCell) {
+        currentlyPreviewedTargetCell.classList.remove('preview-target-up', 'preview-target-down');
+        currentlyPreviewedTargetCell = null;
+      }
+    };
+
+    // Removed updateCoordinatesDisplay function
 
     const render = () => {
       boardEl.innerHTML = '';
-      game.board.forEach((piece, idx) => {
-        const cell = document.createElement('div');
-        cell.className = 'position';
+      game.board.forEach((pieceData, idx) => {
+        const cellEl = document.createElement('div');
+        cellEl.className = 'position bg-white hover:bg-gray-50 transition-colors';
+        cellEl.dataset.cellIndex = idx + 1;
 
-        if (piece) {
-          const el = document.createElement('div');
-          el.classList.add('piece', piece.up ? 'up' : 'down');
-          el.textContent = piece.up ? '←' : '→';
-          el.dataset.pieceId = piece.id;
-          cell.appendChild(el);
+        if (pieceData) {
+          const pieceEl = document.createElement('div');
+          pieceEl.classList.add('piece');
+
+          const pieceVisualContainer = document.createElement('div');
+          pieceVisualContainer.className = 'piece-visual';
+
+          const frogSpan = document.createElement('span');
+          frogSpan.className = 'frog-emoji';
+          frogSpan.textContent = '🐸';
+
+          if (!pieceData.up) frogSpan.classList.add('down-team');
+
+          const indicatorSpan = document.createElement('span');
+          indicatorSpan.classList.add('indicator-symbol', pieceData.up ? 'up' : 'down');
+          indicatorSpan.textContent = pieceData.up ? '←' : '→';
+
+          pieceVisualContainer.appendChild(frogSpan);
+          pieceVisualContainer.appendChild(indicatorSpan);
+          pieceEl.appendChild(pieceVisualContainer);
+
+          pieceEl.dataset.pieceId = pieceData.id;
+          cellEl.appendChild(pieceEl);
         }
-
-        boardEl.appendChild(cell);
+        boardEl.appendChild(cellEl);
       });
     };
 
     const showMsg = (text, type = 'success') => {
       msgEl.textContent = text;
-      msgEl.className = `message ${type}`;
+      msgEl.className = `message ${type} text-sm font-medium p-3 rounded-md`;
+      msgEl.style.animation = 'none';
+      void msgEl.offsetWidth;
+      msgEl.style.animation = 'fadeInMessage 0.5s ease-out forwards';
+      msgEl.classList.toggle('bg-green-100', type === 'success');
+      msgEl.classList.toggle('text-green-700', type === 'success');
+      msgEl.classList.toggle('border-green-200', type === 'success');
+      msgEl.classList.toggle('bg-red-100', type === 'error');
+      msgEl.classList.toggle('text-red-700', type === 'error');
+      msgEl.classList.toggle('border-red-200', type === 'error');
     };
 
+    boardEl.addEventListener('mouseover', (event) => {
+      if (isAnimating) return;
+      const pieceElement = event.target.closest('.piece');
+      if (pieceElement) {
+        clearPreviewHighlights();
+        const pieceId = +pieceElement.dataset.pieceId;
+        const gamePiece = game.piecesMap.get(pieceId);
+        const nextMovePos = game.getNextValidMove(pieceId);
+        if (nextMovePos && gamePiece) {
+          const targetCellElement = boardEl.children[nextMovePos - 1];
+          if (targetCellElement) {
+            targetCellElement.classList.add(gamePiece.up ? 'preview-target-up' : 'preview-target-down');
+            currentlyPreviewedTargetCell = targetCellElement;
+          }
+        }
+      }
+    });
+
+    boardEl.addEventListener('mouseout', (event) => {
+      if (isAnimating) return;
+      const pieceElement = event.target.closest('.piece');
+      if (pieceElement && currentlyPreviewedTargetCell) {
+        if (!boardEl.contains(event.relatedTarget) || !event.relatedTarget.closest('.position')) {
+          clearPreviewHighlights();
+        }
+      }
+    });
+
+    boardEl.addEventListener('mouseleave', () => {
+      if (isAnimating) return;
+      clearPreviewHighlights();
+    });
+
     boardEl.addEventListener('click', ({ target }) => {
-      const clicked = target.closest('.piece');
-      if (!clicked) return;
+      if (isAnimating) return;
+      const clickedPieceElement = target.closest('.piece');
 
-      const id = +clicked.dataset.pieceId;
-      const next = game.getNextValidMove(id);
-      if (!next) return showMsg('⚠️ No valid moves', 'error');
+      if (clickedPieceElement) {
+        const pieceId = +clickedPieceElement.dataset.pieceId;
+        const gamePiece = game.piecesMap.get(pieceId);
+        const nextMovePos = game.getNextValidMove(pieceId);
 
-      try {
-        game.movePiece(id, next);
-        render();
-        if (game.isSuccessState()) showMsg('🎉 Puzzle solved!', 'success');
-      } catch ({ message }) {
-        showMsg(message, 'error');
+        // Removed coordinate display logic from here
+
+        if (nextMovePos && gamePiece) {
+          isAnimating = true;
+          clearPreviewHighlights();
+
+          const originalCell = clickedPieceElement.parentElement;
+          const originalCellRect = originalCell.getBoundingClientRect();
+          const boardRect = boardEl.getBoundingClientRect();
+
+          const staticIndicator = clickedPieceElement.querySelector('.indicator-symbol');
+          const staticIndicatorRect = staticIndicator.getBoundingClientRect();
+
+          const frogToAnimate = clickedPieceElement;
+          frogToAnimate.classList.add('is-animating-frog');
+          const frogAbsoluteLeft = originalCellRect.left - boardRect.left;
+          const frogAbsoluteTop = originalCellRect.top - boardRect.top;
+          frogToAnimate.style.left = `${frogAbsoluteLeft}px`;
+          frogToAnimate.style.top = `${frogAbsoluteTop}px`;
+          boardEl.appendChild(frogToAnimate);
+          originalCell.classList.add('hide-original-piece');
+
+          const indicatorToAnimate = staticIndicator.cloneNode(true);
+          indicatorToAnimate.classList.add('animating-arrow');
+
+          boardEl.appendChild(indicatorToAnimate);
+          const arrowWidth = indicatorToAnimate.offsetWidth || 20;
+
+          const arrowStartX = frogAbsoluteLeft + (frogToAnimate.offsetWidth / 2) - (arrowWidth / 2);
+          const arrowStartY = staticIndicatorRect.top - boardRect.top;
+
+          indicatorToAnimate.style.left = `${arrowStartX}px`;
+          indicatorToAnimate.style.top = `${arrowStartY}px`;
+
+          let jumpAnimationClass = '';
+          let dashAnimationClass = '';
+          const diff = nextMovePos - gamePiece.position;
+
+          if (diff === 1) {
+            jumpAnimationClass = 'animate-jump-right-one';
+            dashAnimationClass = 'animate-dash-right-one';
+          } else if (diff === -1) {
+            jumpAnimationClass = 'animate-jump-left-one';
+            dashAnimationClass = 'animate-dash-left-one';
+          } else if (diff === 2) {
+            jumpAnimationClass = 'animate-jump-right-two';
+            dashAnimationClass = 'animate-dash-right-two';
+          } else if (diff === -2) {
+            jumpAnimationClass = 'animate-jump-left-two';
+            dashAnimationClass = 'animate-dash-left-two';
+          }
+
+          frogToAnimate.classList.add(jumpAnimationClass);
+          indicatorToAnimate.classList.add(dashAnimationClass);
+
+          const frogAnimationPromise = new Promise(resolve => {
+            frogToAnimate.addEventListener('animationend', resolve, { once: true });
+          });
+          const arrowAnimationPromise = new Promise(resolve => {
+            indicatorToAnimate.addEventListener('animationend', resolve, { once: true });
+          });
+
+          Promise.all([frogAnimationPromise, arrowAnimationPromise]).then(() => {
+            frogToAnimate.remove();
+            indicatorToAnimate.remove();
+            originalCell.classList.remove('hide-original-piece');
+
+            game.movePiece(pieceId, nextMovePos);
+            render();
+            isAnimating = false;
+
+            // Removed coordinate display update from here
+
+            if (game.isSuccessState()) {
+              showMsg('🎉 Puzzle solved! Congratulations!', 'success');
+            } else if (game.isGameLocked()) {
+              showMsg('🤔 Game locked. No more moves possible. Try resetting.', 'error');
+            }
+          });
+
+        } else {
+          showMsg('⚠️ No valid moves for this piece!', 'error');
+        }
+      } else {
+        // Removed coordinate display update from here
       }
     });
 
     resetBtn.addEventListener('click', () => {
+      if (isAnimating) return;
+      clearPreviewHighlights();
+      // Removed coordinate display update from here
       game = new Game();
       render();
-      showMsg('Game reset', 'success');
+      showMsg('🔄 Game has been reset.', 'success');
     });
 
-    // initialize board
     render();
+    showMsg('🧩 Welcome to Frog Challenge! Click a frog to move it.', 'success');
   </script>
 </body>
+
 </html>
