@@ -1,105 +1,108 @@
 import { Game } from "./boardgame.js";
 
-let lockedGameCount = 0;
+let terminalCount = 0;
+let successCount = 0;
+let lockedCount = 0;
 const memo = new Map();
 
+const cloneGameState = (game) =>
+  [...game.piecesMap.values()].map((p) => ({
+    id: p.id,
+    position: p.position,
+    up: p.up,
+  }));
+
 const traverseMoves = (game, history = []) => {
-    if (game.isGameLocked()) {
-        lockedGameCount++; // Increase locked game count
+  if (game.isGameLocked()) {
+    terminalCount++;
 
-        const resultMessage = game.isSuccessState()
-            ? `✅ Success #${lockedGameCount}`
-            : `💀 Game Over #${lockedGameCount}`;
+    const isSuccess = game.isSuccessState();
+    const resultMessage = isSuccess
+      ? `✅ Success #${terminalCount}`
+      : `💀 Game Over #${terminalCount}`;
 
-        console.log(resultMessage);
-        console.log("📜 Move Steps:\n" + history.map((move, i) => `${i + 1}. ${move}`).join("\n"));
-        game.displayBoard();
-        console.log("\n");
-        return;
-    }
+    console.log(resultMessage);
+    console.log("📜 Move Steps:\n" + history.map((move, i) => `${i + 1}. ${move}`).join("\n"));
+    game.displayBoard();
+    console.log("\n");
+    return;
+  }
 
-    const validMoves = game.getAllValidMoves();
+  const allValidMoves = game.getAllValidMoves();
 
-    validMoves.forEach(({ pieceId, validMoves }) => {
-        validMoves.forEach((move) => {
-            const clonedGame = new Game(
-                game.boardSize,
-                [...game.piecesMap.values()].map((p) => ({
-                    id: p.id,
-                    position: p.position,
-                    up: p.up,
-                }))
-            );
+  allValidMoves.forEach(({ pieceId, validMoves }) => {
+    validMoves.forEach((move) => {
+      const clonedGame = new Game(game.boardSize, cloneGameState(game));
+      clonedGame.movePiece(pieceId, move);
 
-            clonedGame.movePiece(pieceId, move);
+      const moveLog = `Piece ${pieceId} → ${move}`;
+      const newHistory = [...history, moveLog];
 
-            const moveLog = `Piece ${pieceId} → ${move}`;
-            const newHistory = [...history, moveLog];
-
-            traverseMoves(clonedGame, newHistory);
-        });
+      traverseMoves(clonedGame, newHistory);
     });
+  });
 };
 
 const findSolution = (game, history = []) => {
-    const boardStateKey = game.buildBoardOutput().join("|");
+  const boardStateKey = game.serializeState();
 
-    if (memo.has(boardStateKey)) {
-        lockedGameCount += memo.get(boardStateKey).isSuccess ? 1 : 0;
-        return;
-    }
+  if (memo.has(boardStateKey)) {
+    return memo.get(boardStateKey);
+  }
 
-    if (game.isGameLocked()) {
-        lockedGameCount++;
-        const isSuccess = game.isSuccessState();
-        const resultMessage = isSuccess
-            ? `✅ Success #${lockedGameCount}`
-            : `💀 Game Over #${lockedGameCount}`;
+  if (game.isGameLocked()) {
+    terminalCount++;
+    const isSuccess = game.isSuccessState();
+    if (isSuccess) successCount++;
+    else lockedCount++;
 
-        console.log(resultMessage);
-        console.log("📜 Move Steps:\n" + history.map((move, i) => `${i + 1}. ${move}`).join("\n"));
-        game.displayBoard();
-        console.log("\n");
+    const resultMessage = isSuccess
+      ? `✅ Success #${terminalCount}`
+      : `💀 Game Over #${terminalCount}`;
 
-        memo.set(boardStateKey, { isSuccess });
-        return;
-    }
+    console.log(resultMessage);
+    console.log("📜 Move Steps:\n" + history.map((move, i) => `${i + 1}. ${move}`).join("\n"));
+    game.displayBoard();
+    console.log("\n");
 
-    const validMoves = game.getAllValidMoves();
-    let hasSuccess = false;
+    memo.set(boardStateKey, isSuccess);
+    return isSuccess;
+  }
 
-    validMoves.forEach(({ pieceId, validMoves }) => {
-        validMoves.forEach((move) => {
-            const clonedGame = new Game(
-                game.boardSize,
-                [...game.piecesMap.values()].map(p => ({
-                    id: p.id,
-                    position: p.position,
-                    up: p.up
-                }))
-            );
-            clonedGame.movePiece(pieceId, move);
-            const newHistory = [...history, `Piece ${pieceId} → ${move}`];
-            findSolution(clonedGame, newHistory);
+  const allValidMoves = game.getAllValidMoves();
+  let foundSuccess = false;
 
-            if (memo.has(clonedGame.buildBoardOutput().join("|")) &&
-                memo.get(clonedGame.buildBoardOutput().join("|")).isSuccess) {
-                hasSuccess = true;
-            }
-        });
+  allValidMoves.forEach(({ pieceId, validMoves }) => {
+    validMoves.forEach((move) => {
+      const clonedGame = new Game(game.boardSize, cloneGameState(game));
+      clonedGame.movePiece(pieceId, move);
+      const newHistory = [...history, `Piece ${pieceId} → ${move}`];
+
+      if (findSolution(clonedGame, newHistory)) {
+        foundSuccess = true;
+      }
     });
+  });
 
-    memo.set(boardStateKey, { isSuccess: hasSuccess });
+  memo.set(boardStateKey, foundSuccess);
+  return foundSuccess;
 };
 
+const runSolver = () => {
+  const game = new Game();
+  console.log("🎲 Initial Board:");
+  game.displayBoard();
+  console.log("\n🚀 Starting Traversal...\n");
 
-// Initialize game and start traversal
-const game = new Game();
-console.log("🎲 Initial Board:");
-game.displayBoard();
-console.log("\n🚀 Starting Traversal...\n");
+  findSolution(game);
 
-findSolution(game);
-// traverseMoves(game);
+  console.log(`🏁 Total Moving Scenario: ${terminalCount}`);
+  console.log(`✅ Successes: ${successCount}, 💀 Locked: ${lockedCount}`);
+  console.log(`🧠 Unique states memoized: ${memo.size}`);
+};
 
-console.log(`🏁 Total Moving Senario: ${lockedGameCount}`);
+export { findSolution, traverseMoves, runSolver };
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  runSolver();
+}

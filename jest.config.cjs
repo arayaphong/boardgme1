@@ -1,8 +1,8 @@
 module.exports = {
   testEnvironment: "node",
-  collectCoverage: true,
+  collectCoverage: false,
   coverageDirectory: "coverage",
-  testMatch: ["**/test/**/*.js"],
+  testMatch: ["<rootDir>/src/test/**/*.test.js"],
   verbose: true,
   transform: {
     "^.+\\.js$": "babel-jest"

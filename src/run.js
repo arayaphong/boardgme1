@@ -6,44 +6,51 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3000;
+const ROOT = path.resolve(__dirname, '..');
+
+const mimeTypes = {
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+};
 
 const server = http.createServer((req, res) => {
-    // Parse URL to get the path
-    const filePath = path.join(__dirname, '..', req.url === '/' ? 'index.html' : req.url);
+  // Strip query string and decode URL segments safely
+  const urlPath = new URL(req.url, `http://${req.headers.host}`).pathname;
 
-    // Get the file extension
-    const extname = String(path.extname(filePath)).toLowerCase();
+  // Resolve the requested path inside the project root
+  const requestedPath = path.normalize(urlPath === '/' ? 'index.html' : urlPath);
+  const filePath = path.join(ROOT, requestedPath);
 
-    // MIME types for common file extensions
-    const mimeTypes = {
-        '.html': 'text/html',
-        '.js': 'text/javascript',
-        '.css': 'text/css',
-    };
+  // Reject any request that escapes the project root
+  if (!filePath.startsWith(ROOT + path.sep) && filePath !== ROOT) {
+    res.writeHead(403);
+    res.end('Forbidden');
+    return;
+  }
 
-    const contentType = mimeTypes[extname] || 'application/octet-stream';
+  const extname = path.extname(filePath).toLowerCase();
+  const contentType = mimeTypes[extname] || 'application/octet-stream';
 
-    // Read the file
-    fs.readFile(filePath, (err, content) => {
-        if (err) {
-            if (err.code === 'ENOENT') {
-                // Page not found
-                res.writeHead(404);
-                res.end('Not found');
-            } else {
-                // Server error
-                res.writeHead(500);
-                res.end(`Server Error: ${err.code}`);
-            }
-        } else {
-            // Success
-            res.writeHead(200, { 'Content-Type': contentType });
-            res.end(content);
-        }
-    });
+  fs.readFile(filePath, (err, content) => {
+    if (err) {
+      if (err.code === 'ENOENT' || err.code === 'EISDIR') {
+        res.writeHead(404);
+        res.end('Not found');
+      } else {
+        console.error('❌ Server error:', err);
+        res.writeHead(500);
+        res.end('Internal Server Error');
+      }
+      return;
+    }
+
+    res.writeHead(200, { 'Content-Type': contentType });
+    res.end(content);
+  });
 });
 
 server.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-    console.log(`Serving ./index.html as the default page`);
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`📄 Serving ./index.html as the default page`);
 });

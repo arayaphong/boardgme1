@@ -1,4 +1,4 @@
-import { Game } from "../boardgame";
+import { Game, Piece } from "../boardgame";
 import { jest } from "@jest/globals";
 
 describe("Game Initialization", () => {
@@ -6,6 +6,10 @@ describe("Game Initialization", () => {
 
   beforeEach(() => {
     game = new Game();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   test("should initialize with correct board setup", () => {
@@ -32,20 +36,24 @@ describe("Game Initialization", () => {
 
     game.displayBoard();
 
-    // Convert logged output into an array of lines
     const loggedLines = logSpy.mock.calls.map(call => call[0].split("\n")).flat();
     const expectedOutput = game.buildBoardOutput();
 
     expect(loggedLines).toEqual(expectedOutput);
-
-    logSpy.mockRestore();
   });
-
-
 
   test("should return null for out-of-bounds positions", () => {
     expect(game.getPieceAtPosition(0)).toBeNull();
     expect(game.getPieceAtPosition(8)).toBeNull();
+  });
+});
+
+describe("Piece constructor", () => {
+  test("should create a piece with the given properties", () => {
+    const piece = new Piece(7, true, 4);
+    expect(piece.id).toBe(7);
+    expect(piece.up).toBe(true);
+    expect(piece.position).toBe(4);
   });
 });
 
@@ -91,6 +99,12 @@ describe("Piece Movement", () => {
     game.movePiece(4, 4);
     expect(game.getPieceAtPosition(5)).toBeNull();
     expect(game.getPieceAtPosition(4).id).toBe(4);
+  });
+
+  test("should update piece.position after moving", () => {
+    const piece = game.piecesMap.get(4);
+    game.movePiece(4, 4);
+    expect(piece.position).toBe(4);
   });
 
   test("should throw error for invalid piece", () => {
@@ -182,9 +196,18 @@ describe.each([
     ],
     /Position 3 is already occupied/,
   ],
-])("Piece Placement Validation", (pieces, expectedError) => {
+])("Piece Placement Validation %#", (pieces, expectedError) => {
   test("should validate piece placements", () => {
     expect(() => new Game(7, Array.isArray(pieces) ? pieces : [pieces])).toThrow(expectedError);
+  });
+});
+
+describe("Duplicate piece ID validation", () => {
+  test("should throw error when piece IDs are duplicated", () => {
+    expect(() => new Game(7, [
+      { id: 1, position: 1, up: false },
+      { id: 1, position: 2, up: true },
+    ])).toThrow(/Piece ID 1 is already used/);
   });
 });
 
@@ -230,11 +253,11 @@ describe("Finding All Movable Pieces", () => {
   });
 
   test("should correctly list pieces and their valid moves after a move", () => {
-    game.movePiece(4, 4); // Move piece 4 to position 4
+    game.movePiece(4, 4);
 
     expect(game.getAllValidMoves()).toEqual([
-      { pieceId: 3, validMoves: [5] }, // Piece 3 can jump over 4 to position 5
-      { pieceId: 5, validMoves: [5] }  // Piece 5 moves upward to position 5
+      { pieceId: 3, validMoves: [5] },
+      { pieceId: 5, validMoves: [5] }
     ]);
   });
 });
@@ -255,11 +278,11 @@ describe("Success State Validation", () => {
   });
 
   test("should correctly identify a non-success state", () => {
-    game = new Game(); // Default initial state
+    game = new Game();
     expect(game.isSuccessState()).toBe(false);
   });
 
-  test("should handle edge case with all pieces up", () => {
+  test("should reject a single-team board with all pieces up", () => {
     game = new Game(7, [
       { id: 1, position: 1, up: true },
       { id: 2, position: 2, up: true },
@@ -269,5 +292,32 @@ describe("Success State Validation", () => {
       { id: 6, position: 6, up: true },
     ]);
     expect(game.isSuccessState()).toBe(false);
+  });
+
+  test("should reject a single-team board with all pieces down", () => {
+    game = new Game(7, [
+      { id: 1, position: 2, up: false },
+      { id: 2, position: 3, up: false },
+      { id: 3, position: 4, up: false },
+      { id: 4, position: 5, up: false },
+      { id: 5, position: 6, up: false },
+      { id: 6, position: 7, up: false },
+    ]);
+    expect(game.isSuccessState()).toBe(false);
+  });
+
+  test("should consider an empty board a success state", () => {
+    game = new Game(7, []);
+    expect(game.isSuccessState()).toBe(true);
+  });
+});
+
+describe("State serialization", () => {
+  test("serializeState should produce a stable, display-independent key", () => {
+    const game = new Game();
+    expect(game.serializeState()).toBe("D1|D2|D3|·|U4|U5|U6");
+
+    game.movePiece(4, 4);
+    expect(game.serializeState()).toBe("D1|D2|D3|U4|·|U5|U6");
   });
 });

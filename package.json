@@ -2,16 +2,19 @@
   "name": "boardgme1",
   "version": "1.0.0",
   "type": "module",
-  "description": "",
-  "main": "boardgame.js",
+  "description": "JavaScript implementation of the Frog Challenge puzzle",
+  "main": "src/boardgame.js",
   "scripts": {
-    "start": "NODE_OPTIONS=--experimental-vm-modules node src/run.js",
+    "start": "node src/run.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "devDependencies": {
     "@babel/core": "^7.26.7",
     "@babel/plugin-transform-modules-commonjs": "^7.26.3",

@@ -4,8 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Frog Challenge - Horizontal Board</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Frog Challenge</title>
+  <script src="https://cdn.tailwindcss.com" integrity="sha384-igm5BeiBt36UU4gqwWS7imYmelpTsZlQ45FZf+XBn9MuJbn4nQr7yx1yFydocC/K" crossorigin="anonymous"></script>
   <style>
     body {
       font-family: 'Inter', sans-serif;
@@ -31,17 +31,13 @@
     }
 
     .is-animating-frog {
-      /* Class for the frog piece during its jump animation */
       position: absolute;
       z-index: 90;
-      /* Below dashing arrow, but above static board */
     }
 
     .is-animating-frog .indicator-symbol {
-      /* Hide static indicator on jumping frog */
       visibility: hidden;
     }
-
 
     .piece-visual {
       display: flex;
@@ -81,7 +77,6 @@
       width: auto;
     }
 
-
     .position {
       width: 60px;
       height: 60px;
@@ -98,7 +93,6 @@
     .position.hide-original-piece .piece {
       visibility: hidden;
     }
-
 
     .position:not(:has(.piece)):hover {
       background-color: #e9e9e9;
@@ -131,7 +125,6 @@
     }
 
     .controls {
-      /* Adjusted to simply center the button */
       display: flex;
       justify-content: center;
       margin: 20px 0;
@@ -158,8 +151,6 @@
       transform: translateY(0px);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
-
-    /* Removed #coordinates-display CSS */
 
     .message {
       margin: 20px 0;
@@ -194,7 +185,6 @@
       border: 1px solid #f5c6cb;
     }
 
-    /* Frog Jump Animations */
     .animate-jump-right-one {
       animation: jump-right-one 0.5s ease-out forwards;
     }
@@ -212,62 +202,29 @@
     }
 
     @keyframes jump-right-one {
-      0% {
-        transform: translate(0, 0) scale(1);
-      }
-
-      50% {
-        transform: translate(35px, -40px) scale(1.2);
-      }
-
-      100% {
-        transform: translate(70px, 0) scale(1);
-      }
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(35px, -40px) scale(1.2); }
+      100% { transform: translate(70px, 0) scale(1); }
     }
 
     @keyframes jump-left-one {
-      0% {
-        transform: translate(0, 0) scale(1);
-      }
-
-      50% {
-        transform: translate(-35px, -40px) scale(1.2);
-      }
-
-      100% {
-        transform: translate(-70px, 0) scale(1);
-      }
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(-35px, -40px) scale(1.2); }
+      100% { transform: translate(-70px, 0) scale(1); }
     }
 
     @keyframes jump-right-two {
-      0% {
-        transform: translate(0, 0) scale(1);
-      }
-
-      50% {
-        transform: translate(70px, -55px) scale(1.25);
-      }
-
-      100% {
-        transform: translate(140px, 0) scale(1);
-      }
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(70px, -55px) scale(1.25); }
+      100% { transform: translate(140px, 0) scale(1); }
     }
 
     @keyframes jump-left-two {
-      0% {
-        transform: translate(0, 0) scale(1);
-      }
-
-      50% {
-        transform: translate(-70px, -55px) scale(1.25);
-      }
-
-      100% {
-        transform: translate(-140px, 0) scale(1);
-      }
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(-70px, -55px) scale(1.25); }
+      100% { transform: translate(-140px, 0) scale(1); }
     }
 
-    /* Arrow Dash Animations */
     .animate-dash-right-one {
       animation: dash-right-one 0.5s ease-out forwards;
     }
@@ -285,51 +242,23 @@
     }
 
     @keyframes dash-right-one {
-      0% {
-        transform: translateX(0);
-        opacity: 1;
-      }
-
-      100% {
-        transform: translateX(70px);
-        opacity: 1;
-      }
+      0% { transform: translateX(0); opacity: 1; }
+      100% { transform: translateX(70px); opacity: 1; }
     }
 
     @keyframes dash-left-one {
-      0% {
-        transform: translateX(0);
-        opacity: 1;
-      }
-
-      100% {
-        transform: translateX(-70px);
-        opacity: 1;
-      }
+      0% { transform: translateX(0); opacity: 1; }
+      100% { transform: translateX(-70px); opacity: 1; }
     }
 
     @keyframes dash-right-two {
-      0% {
-        transform: translateX(0);
-        opacity: 1;
-      }
-
-      100% {
-        transform: translateX(140px);
-        opacity: 1;
-      }
+      0% { transform: translateX(0); opacity: 1; }
+      100% { transform: translateX(140px); opacity: 1; }
     }
 
     @keyframes dash-left-two {
-      0% {
-        transform: translateX(0);
-        opacity: 1;
-      }
-
-      100% {
-        transform: translateX(-140px);
-        opacity: 1;
-      }
+      0% { transform: translateX(0); opacity: 1; }
+      100% { transform: translateX(-140px); opacity: 1; }
     }
   </style>
 </head>
@@ -347,20 +276,15 @@
   </div>
 
   <script type="module">
-    class Piece {
-      constructor(id, up, position) {
-        Object.assign(this, { id, up, position });
-      }
-    }
-
     import { Game } from './src/boardgame.js';
+
     let game = new Game();
     const boardEl = document.getElementById('board');
     const msgEl = document.getElementById('message');
     const resetBtn = document.getElementById('resetBtn');
-    // Removed coordinatesDisplayEl variable
     let currentlyPreviewedTargetCell = null;
     let isAnimating = false;
+    let isSolved = false;
 
     const clearPreviewHighlights = () => {
       if (currentlyPreviewedTargetCell) {
@@ -369,7 +293,11 @@
       }
     };
 
-    // Removed updateCoordinatesDisplay function
+    const clearMessage = () => {
+      msgEl.textContent = '';
+      msgEl.className = 'message';
+      msgEl.style.animation = '';
+    };
 
     const render = () => {
       boardEl.innerHTML = '';
@@ -421,7 +349,7 @@
     };
 
     boardEl.addEventListener('mouseover', (event) => {
-      if (isAnimating) return;
+      if (isAnimating || isSolved) return;
       const pieceElement = event.target.closest('.piece');
       if (pieceElement) {
         clearPreviewHighlights();
@@ -439,7 +367,7 @@
     });
 
     boardEl.addEventListener('mouseout', (event) => {
-      if (isAnimating) return;
+      if (isAnimating || isSolved) return;
       const pieceElement = event.target.closest('.piece');
       if (pieceElement && currentlyPreviewedTargetCell) {
         if (!boardEl.contains(event.relatedTarget) || !event.relatedTarget.closest('.position')) {
@@ -449,12 +377,12 @@
     });
 
     boardEl.addEventListener('mouseleave', () => {
-      if (isAnimating) return;
+      if (isAnimating || isSolved) return;
       clearPreviewHighlights();
     });
 
     boardEl.addEventListener('click', ({ target }) => {
-      if (isAnimating) return;
+      if (isAnimating || isSolved) return;
       const clickedPieceElement = target.closest('.piece');
 
       if (clickedPieceElement) {
@@ -462,28 +390,23 @@
         const gamePiece = game.piecesMap.get(pieceId);
         const nextMovePos = game.getNextValidMove(pieceId);
 
-        // Removed coordinate display logic from here
-
         if (nextMovePos && gamePiece) {
           isAnimating = true;
           clearPreviewHighlights();
+          clearMessage();
 
           const originalCell = clickedPieceElement.parentElement;
-          const originalCellRect = originalCell.getBoundingClientRect();
-          const boardRect = boardEl.getBoundingClientRect();
-
-          const staticIndicator = clickedPieceElement.querySelector('.indicator-symbol');
-          const staticIndicatorRect = staticIndicator.getBoundingClientRect();
 
           const frogToAnimate = clickedPieceElement;
           frogToAnimate.classList.add('is-animating-frog');
-          const frogAbsoluteLeft = originalCellRect.left - boardRect.left;
-          const frogAbsoluteTop = originalCellRect.top - boardRect.top;
+          const frogAbsoluteLeft = originalCell.offsetLeft;
+          const frogAbsoluteTop = originalCell.offsetTop;
           frogToAnimate.style.left = `${frogAbsoluteLeft}px`;
           frogToAnimate.style.top = `${frogAbsoluteTop}px`;
           boardEl.appendChild(frogToAnimate);
           originalCell.classList.add('hide-original-piece');
 
+          const staticIndicator = clickedPieceElement.querySelector('.indicator-symbol');
           const indicatorToAnimate = staticIndicator.cloneNode(true);
           indicatorToAnimate.classList.add('animating-arrow');
 
@@ -491,7 +414,7 @@
           const arrowWidth = indicatorToAnimate.offsetWidth || 20;
 
           const arrowStartX = frogAbsoluteLeft + (frogToAnimate.offsetWidth / 2) - (arrowWidth / 2);
-          const arrowStartY = staticIndicatorRect.top - boardRect.top;
+          const arrowStartY = frogAbsoluteTop + clickedPieceElement.offsetTop + staticIndicator.offsetTop;
 
           indicatorToAnimate.style.left = `${arrowStartX}px`;
           indicatorToAnimate.style.top = `${arrowStartY}px`;
@@ -533,9 +456,8 @@
             render();
             isAnimating = false;
 
-            // Removed coordinate display update from here
-
             if (game.isSuccessState()) {
+              isSolved = true;
               showMsg('🎉 Puzzle solved! Congratulations!', 'success');
             } else if (game.isGameLocked()) {
               showMsg('🤔 Game locked. No more moves possible. Try resetting.', 'error');
@@ -545,16 +467,15 @@
         } else {
           showMsg('⚠️ No valid moves for this piece!', 'error');
         }
-      } else {
-        // Removed coordinate display update from here
       }
     });
 
     resetBtn.addEventListener('click', () => {
       if (isAnimating) return;
       clearPreviewHighlights();
-      // Removed coordinate display update from here
+      clearMessage();
       game = new Game();
+      isSolved = false;
       render();
       showMsg('🔄 Game has been reset.', 'success');
     });

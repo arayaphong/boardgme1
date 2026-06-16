@@ -24,8 +24,12 @@ class Game {
 
   _initializePieces = (pieces) => {
     const occupiedPositions = new Set();
+    const usedIds = new Set();
 
     pieces.forEach(({ id, position, up }) => {
+      if (usedIds.has(id)) {
+        throw new Error(`⚠️ Piece ID ${id} is already used!`);
+      }
       if (!this.isWithinBoardBounds(position)) {
         throw new Error(`❌ Invalid position ${position} for piece ${id}`);
       }
@@ -33,6 +37,7 @@ class Game {
         throw new Error(`⚠️ Position ${position} is already occupied!`);
       }
 
+      usedIds.add(id);
       occupiedPositions.add(position);
       const piece = new Piece(id, up, position);
       this.board[position - 1] = piece;
@@ -51,6 +56,12 @@ class Game {
       (piece, index) => `${index + 1} ${piece ? (piece.up ? "▲" : "▼") : "·"} ${piece?.id ?? ""}`
     ),
   ];
+
+  serializeState = () => {
+    return this.board
+      .map((piece) => (piece ? `${piece.up ? "U" : "D"}${piece.id}` : "·"))
+      .join("|");
+  };
 
   displayBoard = () => console.log(this.buildBoardOutput().join("\n"));
 
@@ -81,10 +92,10 @@ class Game {
 
   getAllValidMoves = () => {
     return [...this.piecesMap.values()]
-      .map(piece => ({
-        pieceId: piece.id,
-        validMoves: this.getNextValidMove(piece.id) ? [this.getNextValidMove(piece.id)] : []
-      }))
+      .map(piece => {
+        const move = this.getNextValidMove(piece.id);
+        return { pieceId: piece.id, validMoves: move ? [move] : [] };
+      })
       .filter(({ validMoves }) => validMoves.length > 0);
   };
 
@@ -109,16 +120,19 @@ class Game {
 
   isSuccessState() {
     const pieces = [...this.piecesMap.values()].sort((a, b) => a.position - b.position);
-    const upFacedCount = pieces.filter(piece => piece.up).length;
+    if (pieces.length === 0) return true;
 
-    // Require at least one down-faced piece to validate full alignment
-    const hasDownFaced = pieces.some(piece => !piece.up);
+    const upFacedCount = pieces.filter(piece => piece.up).length;
+    const downFacedCount = pieces.length - upFacedCount;
+
+    // Success requires both teams to be present and fully swapped.
+    if (upFacedCount === 0 || downFacedCount === 0) return false;
 
     return pieces.every((piece, index) => {
       return index < upFacedCount
         ? piece.up && piece.position === index + 1
         : !piece.up && piece.position === this.boardSize - (pieces.length - 1 - index);
-    }) && (hasDownFaced || upFacedCount === 0);
+    });
   }
 }
 
